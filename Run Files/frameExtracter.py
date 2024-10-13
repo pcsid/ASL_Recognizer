@@ -10,6 +10,8 @@ def extract_frames(video_path, output_folder, frame_rate=1):
         output_folder (str): Directory to save the extracted frames.
         frame_rate (int): Number of frames to skip between saved frames (e.g., 1 means save every frame).
     """
+    video_name = os.path.splitext(os.path.basename(video_path))[0]
+
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
@@ -21,7 +23,7 @@ def extract_frames(video_path, output_folder, frame_rate=1):
     while success:
         # Save frame every 'frame_rate' frames
         if count % frame_rate == 0:
-            frame_filename = os.path.join(output_folder, f"frame_{saved_count}.jpg")
+            frame_filename = os.path.join(output_folder, f"{video_name}_frame_{saved_count}.jpg")
             cv2.imwrite(frame_filename, frame)
             saved_count += 1
 
