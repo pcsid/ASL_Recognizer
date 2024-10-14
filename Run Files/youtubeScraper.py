@@ -1,3 +1,4 @@
+import csv
 from googleapiclient.discovery import build
 from pytube import YouTube
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -19,11 +20,13 @@ def search_videos(query, max_results):
         type="video"
     ).execute()
     
-    video_ids = []
+    video_data = []
     for item in search_response.get("items", []):
-        video_ids.append(item["id"]["videoId"])
+        video_id = item["id"]["videoId"]
+        title = item["snippet"]["title"]
+        video_data.append((video_id, title))
     
-    return video_ids
+    return video_data
 
 # Function to download video using pytube
 def download_video(video_id, output_path="../downloads"):
@@ -55,27 +58,30 @@ def get_transcript(video_id, languages=['en']):
         return None
 
 # Main function to search, download, and retrieve transcripts
-def search_and_download_videos(query, max_results=3, output_path="../downloads"):
+def search_and_download_videos(query, max_results, output_path="../downloads"):
     if not os.path.exists(output_path):
         os.makedirs(output_path)
     
     # Search for videos
-
-    video_ids = search_videos(query, max_results)
-    print(video_ids)
-    for video_id in video_ids:
-        # Download the video
-        print(f"donwaloding {video_id}")
-        download_video(video_id, output_path)
+    video_data = search_videos(query, max_results)
+    
+    # Prepare CSV file
+    csv_file_path = os.path.join(output_path, "video_data.csv")
+    with open(csv_file_path, mode='w', newline='', encoding='utf-8') as csv_file:
+        csv_writer = csv.writer(csv_file)
+        csv_writer.writerow(["Title", "Link", "", "Subtitles"])  # Header row
         
-        # Retrieve and save the transcript
-        transcript = get_transcript(video_id)
-        if transcript:
-            with open(f"{output_path}/{video_id}_transcript.txt", "w", encoding="utf-8") as f:
-                f.write(transcript)
-            print(f"Transcript saved for video ID: {video_id}")
+        for video_id, title in video_data:
+            # Download the video
+            download_video(video_id, output_path)
+            
+            # Retrieve and save the transcript
+            transcript = get_transcript(video_id)
+            video_link = f"https://www.youtube.com/watch?v={video_id}"
+            csv_writer.writerow([title, video_link, "", transcript])
+            print(f"Data saved for video ID: {video_id}")
 
 # Example usage
 if __name__ == "__main__":
-    search_query = "funny cat videos"
-    search_and_download_videos(search_query, max_results=20)
+    search_query = "ASL PSA"
+    search_and_download_videos(search_query, max_results=30)
